@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "prettier",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "consistent-return": 2,
+    "indent"           : [1, 2]
+  }
+}
