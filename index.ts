@@ -1,20 +1,18 @@
 import {kebabCase, mapKeys} from 'lodash';
 
-export type StaticId = string | WithAttrs;
-export type DynamicId = (x: any) => string | WithAttrs;
+type Flavor<T, S> = {__type?: T} & S;
 
-export type TestIdValue = StaticId | DynamicId;
-export type TestIds = Record<string, TestIdValue>;
+type StaticId = Flavor<'staticId', string>;
+type DynamicId = Flavor<'dynamicId', (x: any) => string>;
+type WithAttrsId<T extends Record<string, any> = Record<string, any>> = Flavor<'withAttrsId', S> & {attrs?: T};
+type DynamicIdWithAttrs<T extends Record<string, any> = Record<string, any>> = Flavor<'dynamicIdWithAttrs', (x: any, attrs?: Record<string, any>) => WithAttrsId<T>>;
 
-class WithAttrs<T extends Record<string, any> = Record<string, any>> {
-  constructor(public readonly id: string) {}
+type TestId = StaticId | DynamicId | WithAttrsId | DynamicIdWithAttrs;
 
-  public attributes(attrs: T, attrName?: string): string {
-    return makeSelectorWithAttrs(this.id, attrs, attrName);
-  }
-}
+class S extends String {}
 
-export const withAttrs = <T extends Record<string, any>>(id: string) => new WithAttrs<T>(id);
+export function withAttrs<T extends Record<string, any>>(x: string): WithAttrsId<T> {return new S(x)};
+withAttrs.__type = 'withAttrsId';
 
 const testIdSelector = (id: string, attrName = 'test-id'): string => `[data-${attrName}="${id}"]`;
 
@@ -25,28 +23,25 @@ const makeSelectorWithAttrs = (id: string, attrs: Record<string, any>, attrName?
 }; 
 
 export const makeTestIdSelectors = <
-  S extends Record<string, TestIdValue>,
+  S extends Record<string, TestId>,
 >(
     testIds: S,
     attrName?: string,
-  ): S => {
+  ): any => {
   const selectors: any = {};
 
   for (const key in testIds) {
-    const value: TestIdValue = testIds[key];
-    
-    if (typeof value === 'string') {
-      selectors[key] = testIdSelector(value, attrName);
-    } else {
-      if (value instanceof WithAttrs) {
-        selectors[key] = value;
-      } else {
-        selectors[key] = (x: any) => {
-          const res = value(x);
+    const value: any = testIds[key];
 
-          return typeof res === 'string' ? testIdSelector(res) : res;
-        };
-      }
+    if (value instanceof S) {
+      selectors[key] = (attrs: Record<string, any>) => makeSelectorWithAttrs(value as string, attrs, attrName);
+    } else if (typeof value === 'string') {
+      selectors[key] = testIdSelector(value, attrName);
+    } else if (typeof value === 'function') {
+      selectors[key] = (x: any, attrs?: Record<string, any>) => {
+        const res: any = value(x);
+        return res instanceof S ? makeSelectorWithAttrs(res as string, attrs!, attrName) : testIdSelector(res as string, attrName);
+      };
     }
   }
 
@@ -64,7 +59,7 @@ export const testIdProp = <T extends Record<string, any>, K extends string, S ex
   }, (_, key: string) => `data-${kebabCase(key)}`) as any;
 };
 
-export const testIdPropString = (id: string, attrs: Record<string, any> = {}, attrName = 'test-id'): string => {
+export const testIdPropString = <S extends string>(id: S, attrs: Record<string, any> = {}, attrName = 'test-id'): string => {
   return Object.entries(attrs).reduce((acc, [key, value]) => {
     return `${acc} data-${kebabCase(key)}="${value}"`;
   }, `data-${attrName}="${id}"`);

@@ -1,5 +1,5 @@
 import {JSDOM} from 'jsdom';
-import {makeTestIdSelectors, withAttrs, testIdPropString, testIdProp} from './index';
+import {withAttrs, makeTestIdSelectors, testIdPropString, testIdProp} from './index';
 
 type ListItem = {
   id: string;
@@ -8,12 +8,13 @@ type ListItem = {
 
 const testIds = {
   list: 'list',
-  listWithAttrs: withAttrs<{name: string}>('list'),
+  listWithAttrs: withAttrs<{name: 'A'}>('list'),
   listItem: (item: ListItem) => `list-item-${item.id}`,
   listItemWithAttrs: (item: ListItem) => withAttrs<{status: 'A' | 'B'}>(`list-item-${item.id}`),
 };
 
 const testIdSelectors = makeTestIdSelectors(testIds);
+const testIdSelectorsWithAnotherAttrName = makeTestIdSelectors(testIds, 'qa');
 
 describe('Test', () => {
   const items: ListItem[] = [
@@ -29,14 +30,20 @@ describe('Test', () => {
 
   test('static field', () => {
     expect(testIdSelectors.list).toBe('[data-test-id="list"]');
+    expect(testIdSelectorsWithAnotherAttrName.list).toBe('[data-qa="list"]');
   });
 
   test('dynamic field', () => {
     expect(testIdSelectors.listItem(items[0])).toBe('[data-test-id="list-item-1"]');
+    expect(testIdSelectorsWithAnotherAttrName.listItem(items[0])).toBe('[data-qa="list-item-1"]');
   });
 
-  test('With attrs', () => {
-    expect(testIdSelectors.listItemWithAttrs(items[0]).attributes({status: 'A'})).toBe('[data-test-id="list-item-1"][data-status="A"]');
+  test('static field with attrs', () => {
+    expect(testIdSelectors.listWithAttrs({name: 'A'})).toBe('[data-test-id="list"][data-name="A"]');
+  });
+
+  test('dynamic field with attrs', () => {
+    expect(testIdSelectors.listItemWithAttrs(items[0], {status: 'A'})).toBe('[data-test-id="list-item-1"][data-status="A"]');
   });
 
   test('testIdProp', () => {
@@ -65,13 +72,13 @@ describe('Test', () => {
 
   test('jsdom with attributes', () => {
     const dom = new JSDOM(`
-      <ul ${testIdPropString(testIds.listWithAttrs.id, {name: 'A'})}>
-        ${items.map((item) => `<li ${testIdPropString(testIds.listItemWithAttrs(item).id, {status: 'A'})}>${item.name}</li>`)}
+      <ul ${testIdPropString(testIds.listWithAttrs as string, {name: 'A'})}>
+        ${items.map((item) => `<li ${testIdPropString(testIds.listItemWithAttrs(item) as string, {status: 'A'})}>${item.name}</li>`)}
       </ul>
     `);
-    const ul = dom.window.document.querySelector(testIdSelectors.listWithAttrs.attributes({name: 'A'}));
-    const li1 = dom.window.document.querySelector<HTMLLIElement>(testIdSelectors.listItemWithAttrs(items[0]).attributes({status: 'A'}));
-    const li2 = dom.window.document.querySelector<HTMLLIElement>(testIdSelectors.listItemWithAttrs(items[0]).attributes({status: 'B'}));
+    const ul = dom.window.document.querySelector(testIdSelectors.listWithAttrs({name: 'A'}));
+    const li1 = dom.window.document.querySelector<HTMLLIElement>(testIdSelectors.listItemWithAttrs(items[0], {status: 'A'}));
+    const li2 = dom.window.document.querySelector<HTMLLIElement>(testIdSelectors.listItemWithAttrs(items[0], {status: 'B'}));
 
     expect(ul).not.toBeNull();
     expect(li1?.innerHTML).toBe(items[0].name);
