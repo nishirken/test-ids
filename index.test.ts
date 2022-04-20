@@ -10,7 +10,7 @@ const testIds = {
   list: 'list',
   listWithAttrs: withAttrs<{name: 'A'}>('list'),
   listItem: (item: ListItem) => `list-item-${item.id}`,
-  listItemWithAttrs: (item: ListItem) => withAttrs<{status: 'A' | 'B'}>(`list-item-${item.id}`),
+  listItemWithAttrs: (item: ListItem) => withAttrs<{status: string}>(`list-item-${item.id}`),
 };
 
 const testIdSelectors = makeTestIdSelectors(testIds);
