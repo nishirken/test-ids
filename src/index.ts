@@ -1,10 +1,10 @@
 import { kebabCase, mapKeys, mapValues } from "lodash";
 import {
-  StaticId,
-  StaticIdWithAttrs,
-  DynamicId,
-  DynamicIdWithAttrs,
-  TestId,
+  type StaticId,
+  type StaticIdWithAttrs,
+  type DynamicId,
+  type DynamicIdWithAttrs,
+  type TestId,
   WithAttrsString,
 } from "./types";
 

@@ -1,10 +1,11 @@
 {
   "name": "test-ids",
-  "version": "1.2.1",
+  "version": "2.2.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
+  "files": ["dist"],
+  "scripts": { 
     "test": "jest",
     "lint": "eslint ./src --ext .ts,.tsx --quiet",
     "prepublish": "tsc"
